@@ -12,8 +12,18 @@ app.use(express.json())
 app.use('/api/v1/user', userRouter)
 
 async function main(){
-    const PORT = process.env.PORT || 3000
+    try {
     await mongoose.connect(process.env.MONGO_URI)
-    console.log(`Server listening on http://localhost:${PORT}`)
+    console.log("MongoDB connetced")
+
+    const PORT = process.env.PORT || 3000
+    
+    app.listen(PORT, () => {
+        console.log(`Server listening on http://localhost:${PORT}`)
+    })
+    } catch (error) {
+        console.log("Database connection failed", error)
+    }
+    
 }
 main()
