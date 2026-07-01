@@ -2,6 +2,8 @@ import {Router} from 'express'
 import { userModel } from '../models/user.model.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import authMiddleware from '../middleware/auth.js'
+import { jobModel } from '../models/job.model.js'
 
 const userRouter = Router()
 
@@ -67,6 +69,38 @@ userRouter.post('/login', async(req, res) => {
         console.log(error)
         res.json({
             msg: "Internal server error"
+        })
+    }
+})
+
+userRouter.post('/job-apply', authMiddleware, async(req, res) => {
+    try {
+        const {company, position, salary, status, interviewDate, notes} = req.body
+
+        if(!company || !position){
+            return res.status(404).json({
+                msg: "These fileds are required"
+            })
+        }
+
+        const job = await jobModel.create({
+            user: req.userId,
+            company, 
+            position, 
+            salary, 
+            status, 
+            interviewDate, 
+            notes
+        })
+        res.status(200).json({
+            success: true,
+            msg: "job application added successfully",
+            job
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            msg: "Internal Server Error"
         })
     }
 })
