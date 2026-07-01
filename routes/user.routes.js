@@ -1,6 +1,7 @@
 import {Router} from 'express'
 import { userModel } from '../models/user.model.js'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 const userRouter = Router()
 
@@ -8,14 +9,14 @@ userRouter.post('/signup', async(req, res) => {
     try {
         const {name, email, password} = req.body
         if(!name || !email || !password){
-            res.status(400).json({
+           return res.status(400).json({
                 msg: "All fields are necessary"
             })
         }
 
         const existingUser = await userModel.findOne({email})
         if(existingUser){
-            res.json({
+            return res.json({
                 msg: "User already exist"
             })
         }
@@ -36,6 +37,37 @@ userRouter.post('/signup', async(req, res) => {
             msg: "Internal srever error"
         })
         
+    }
+})
+
+userRouter.post('/login', async(req, res) => {
+    try {
+        const {email, password} = req.body
+        const foundUser = await userModel.findOne({email})
+        if(!foundUser){
+           return res.json({
+                msg: "User data doesn't exist first signup"
+            })
+        }
+
+        const matched = await bcrypt.compare(password, foundUser.password)
+        if(!matched){
+           return res.status(400).json({
+                msg: "Incorrect Password"
+            })
+        }
+        const token = jwt.sign({
+            _id: foundUser.id
+        }, process.env.JWT_SECRET)
+        res.json({
+            msg: "Login successfully",
+            token: token
+        })
+    } catch (error) {
+        console.log(error)
+        res.json({
+            msg: "Internal server error"
+        })
     }
 })
 
