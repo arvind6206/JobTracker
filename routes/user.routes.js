@@ -73,7 +73,8 @@ userRouter.post('/login', async(req, res) => {
     }
 })
 
-userRouter.post('/job-apply', authMiddleware, async(req, res) => {
+userRouter.post(
+    '/job-apply', authMiddleware, async(req, res) => {
     try {
         const {company, position, salary, status, interviewDate, notes} = req.body
 
@@ -104,5 +105,40 @@ userRouter.post('/job-apply', authMiddleware, async(req, res) => {
         })
     }
 })
+
+userRouter.get('/jobs', authMiddleware, async(req, res) => {
+    try {
+        const jobs = await jobModel.find({
+            user: req.userId
+        })
+        res.json({
+            jobs: jobs
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            msg: "Internal Server Error"
+        })
+    }
+})
+
+userRouter.get('/jobs/:id', authMiddleware, async(req, res) => {
+    try {
+        const jobs = await jobModel.findOne({
+            _id: req.params.id,
+            user: req.userId
+        })
+        res.json({
+            jobs: jobs
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            msg: "Internal Server Error"
+        })
+    }
+})
+
+
 
 export default userRouter
