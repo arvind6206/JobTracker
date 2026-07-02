@@ -140,5 +140,45 @@ userRouter.get('/jobs/:id', authMiddleware, async(req, res) => {
 })
 
 
+userRouter.put('/jobs/:id', authMiddleware, async (req, res) => {
+    try {
+        const jobId = req.params.id;
+
+        const { company, position, salary, status, interviewDate, notes } = req.body;
+
+        const job = await jobModel.findOne({
+            _id: jobId,
+            user: req.userId
+        });
+
+        if (!job) {
+            return res.status(404).json({
+                msg: "Job not found"
+            });
+        }
+
+        job.company = company ?? job.company;
+        job.position = position ?? job.position;
+        job.salary = salary ?? job.salary;
+        job.status = status ?? job.status;
+        job.interviewDate = interviewDate ?? job.interviewDate;
+        job.notes = notes ?? job.notes;
+
+        await job.save();
+
+        return res.status(200).json({
+            msg: "Job updated successfully",
+            job
+        });
+
+    } catch (error) {
+        console.log(error);
+
+        return res.status(500).json({
+            msg: "Internal server error"
+        });
+    }
+});
+
 
 export default userRouter
