@@ -207,4 +207,58 @@ userRouter.delete("/jobs/:id", authMiddleware, async (req, res) => {
   }
 });
 
+userRouter.get('/jobs', authMiddleware, async(req, res) => {
+  try {
+    const {q, status, company, minSalary, maxSalary, page = 1, limit = 10, sort} = req.query
+
+    const filter = {user: req.user._id}
+
+    if(q){
+      filter.$text = {$search: q}
+    }
+    if(status){
+      filter.status = status
+    }
+
+    if(company){
+      filter.company = {$regex: company, $options: 'i'}
+    }
+
+    if(minSalary || maxSalary){
+      filter.salary = {}
+      if(minSalary) filter.salary.$gte = Number(minSalary)
+      if(maxSalary) filter.salary.$lte = Number(maxSalary)    
+      }
+
+      const skip = (Number(page) - 1) * Number(limit)
+
+      const query = jobModel.find(filter)
+
+      if(q){
+        query.sort({score: {$meta: 'textScore'}})
+        .select({score: {$meta: 'textScore'}})
+      } else {
+        query.sort({createdAt: -1})
+      }
+
+      const jobs = await query.skip(skip).limit(Number(limit))
+      const total = await jobModel.countDocuments(filter)
+
+      res.status(200).json({
+        success: true,
+        count: jobs.length,
+        total,
+        page: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        jobs
+      })
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      msg: error.message
+    })
+  }
+})
+
 export default userRouter;
